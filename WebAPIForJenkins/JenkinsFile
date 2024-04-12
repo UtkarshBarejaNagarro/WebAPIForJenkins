@@ -1,0 +1,45 @@
+pipeline {
+    agent any
+        
+    stages {
+        
+        stage ('Git Checkout') {
+            steps {
+                git branch: 'master', url: 'https://github.com/UtkarshBarejaNagarro/WebAPIForJenkins'
+            }
+        }
+        
+        stage('Build Docker Image') {
+            steps {
+                dir('/var/lib/jenkins/workspace/Build and Deploy/WebAPIForJenkins') {
+                    script {
+                        sh 'docker build -t webapi .'
+                    }
+                }
+            }
+        }
+        stage('Login to Docker Registry') {
+            steps {
+                script {
+                    withCredentials([usernamePassword(credentialsId: 'DockerhubID', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
+                        sh 'docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD}'
+                    }
+                }
+            }
+        }
+        stage('Tag Docker Image') {
+            steps {
+                script {
+                    sh 'docker tag webapi:latest utkarshbarejanagarro/devopsjenkins:webapi'
+                }
+            }
+        }
+        stage('Push Docker Image to Registry') {
+            steps {
+                script {
+                    sh 'docker push utkarshbarejanagarro/devopsjenkins:webapi'
+                }
+            }
+        }
+    }
+}
